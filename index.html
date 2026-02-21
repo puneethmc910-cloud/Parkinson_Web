@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parkinson’s Monitor | Home</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="libs/chart.min.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body data-page="home">
+  <nav>
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Parkinson’s Monitor</a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <button id="theme-toggle" class="toggle" aria-label="Toggle theme" aria-pressed="false"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Parkinson’s Monitoring with ESP32 + Sensors</h1>
+      <p class="lead">
+        Track tremor, gait, and balance using MPU6050 IMU, FSR pressure sensors, and flex sensors on ESP32.
+        Connect in real time, visualize left vs. right leg pressure, and flag instability early.
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <a class="btn" href="dashboard.html">Open Dashboard</a>
+        <a class="btn btn-ghost" href="#how">How it works</a>
+      </div>
+    </section>
+
+    <section class="grid grid-3">
+      <div class="card">
+        <h2>Real-time streaming</h2>
+        <p class="lead" style="font-size:14px;">WebSocket-based feed from ESP32; auto-reconnect and optional demo mode.</p>
+      </div>
+      <div class="card">
+        <h2>Pressure symmetry</h2>
+        <p class="lead" style="font-size:14px;">Left/right leg FSRs graphed live to spot stance asymmetry and freezing cues.</p>
+      </div>
+      <div class="card">
+        <h2>Tremor metrics</h2>
+        <p class="lead" style="font-size:14px;">Accel magnitude to estimate tremor amplitude; add FFT later if needed.</p>
+      </div>
+    </section>
+
+    <section id="how" class="grid grid-2" style="margin-top:32px;">
+      <div class="card">
+        <h2>ESP32 setup (HTTP/WebSocket)</h2>
+        <p class="lead" style="font-size:14px;">
+          Flash ESP32 with Wi‑Fi + WebSocket on port 81. Send JSON fields:
+          <code>t, ax, ay, az, gx, gy, gz, fsrL, fsrR, flex, part</code>.
+          Put the same IP in the Dashboard WebSocket field. The site will connect on LAN or AP mode (e.g., 192.168.4.1).
+        </p>
+      </div>
+      <div class="card">
+        <h2>Privacy first</h2>
+        <p class="lead" style="font-size:14px;">
+          Processing stays in-browser; no cloud dependency. Use body-part tags, avoid personal identifiers, secure your Wi‑Fi.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Local-first monitoring. Keep credentials private. Replace demo mode with your ESP32 feed when ready.
+  </footer>
+</body>
+</html>
+

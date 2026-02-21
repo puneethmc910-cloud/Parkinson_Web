@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parkinson’s Monitor | About</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="libs/chart.min.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body data-page="about">
+  <nav>
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Parkinson’s Monitor</a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <button id="theme-toggle" class="toggle" aria-label="Toggle theme" aria-pressed="false"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <h1>About the Project</h1>
+      <p class="lead">
+        A lightweight, local-first toolkit to monitor Parkinson’s symptoms—tremor, gait, and balance—using an ESP32 with common sensors.
+      </p>
+    </section>
+
+    <section class="grid grid-2">
+      <div class="card">
+        <h2>Sensors</h2>
+        <p class="lead" style="font-size:14px;">
+          <strong>MPU6050</strong> (accel + gyro) for tremor and motion; <strong>FSR 402 / FlexiForce A201</strong> for left/right foot pressure;
+          <strong>Flex sensor</strong> for joint bend; optional <strong>MAX30100</strong> for HR/SpO2.
+        </p>
+      </div>
+      <div class="card">
+        <h2>Placement</h2>
+        <p class="lead" style="font-size:14px;">
+          IMU on shin or wrist; FSR pads under heel/toe or in insoles; flex across knee or finger.
+        </p>
+      </div>
+    </section>
+
+    <section class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h2>How data flows</h2>
+        <p class="lead" style="font-size:14px;">
+          ESP32 samples sensors, sends JSON via WebSocket on port 81:
+          <code>{t, ax, ay, az, gx, gy, gz, fsrL, fsrR, flex, part}</code>.
+          The dashboard consumes this stream and renders live charts.
+        </p>
+      </div>
+      <div class="card">
+        <h2>Privacy & safety</h2>
+        <p class="lead" style="font-size:14px;">
+          Runs locally; no cloud required. Use WPA2/WPA3, avoid personal identifiers, and clear logs if you store data.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    ESP32 + browser = fast, local insights. Swap demo data for your live feed anytime.
+  </footer>
+</body>
+</html>
+
+

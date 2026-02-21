@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parkinson’s Monitor | Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="libs/chart.min.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body data-page="dashboard">
+  <nav>
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Parkinson’s Monitor</a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <button id="theme-toggle" class="toggle" aria-label="Toggle theme" aria-pressed="false"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="card">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+        <div>
+          <h1 style="margin:0;">Live Dashboard</h1>
+          <div class="lead" style="margin-top:6px;">Connect to your ESP32 WebSocket (port 81) or use Demo mode.</div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-title">Status</div>
+            <div class="row" style="align-items:center; gap:8px;">
+              <div class="status-dot" id="status-dot"></div>
+              <div id="status-text">Disconnected</div>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-title">Left pressure</div>
+            <div class="metric-value" id="left-pressure">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-title">Right pressure</div>
+            <div class="metric-value" id="right-pressure">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-title">Tremor</div>
+            <div class="metric-value" id="tremor-level">0 g</div>
+          </div>
+          <div class="metric">
+            <div class="metric-title">Heart rate</div>
+            <div class="metric-value" id="hr-value">-- bpm</div>
+          </div>
+          <div class="metric">
+            <div class="metric-title">Temperature</div>
+            <div class="metric-value" id="temp-value">-- °C</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+        <div style="min-width:140px;">
+          <label for="protocol-select">Connection</label>
+          <select id="protocol-select">
+            <option value="wifi">Wi‑Fi (WebSocket)</option>
+            <option value="ble">Bluetooth LE</option>
+          </select>
+        </div>
+        <div style="min-width:200px;">
+          <label for="host-name">ESP32 host (mDNS/name)</label>
+          <input id="host-name" type="text" value="esp32.local" placeholder="esp32.local">
+        </div>
+        <div style="min-width:220px;">
+          <label for="ws-url">WebSocket URL (ESP32)</label>
+          <input id="ws-url" type="text" value="ws://192.168.4.1:81" placeholder="ws://192.168.1.50:81">
+        </div>
+        <div style="min-width:220px;">
+          <label for="ble-service">BLE Service UUID (opt.)</label>
+          <input id="ble-service" type="text" placeholder="e.g., 0000ffe0-0000-1000-8000-00805f9b34fb">
+        </div>
+        <div style="min-width:220px;">
+          <label for="ble-char">BLE Characteristic UUID (opt.)</label>
+          <input id="ble-char" type="text" placeholder="e.g., 0000ffe1-0000-1000-8000-00805f9b34fb">
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; padding-top:18px;">
+          <input id="autoconnect" type="checkbox" style="width:16px; height:16px;">
+          <label for="autoconnect">Auto-connect on load</label>
+        </div>
+        <button id="connect-btn">Connect</button>
+        <button id="disconnect-btn" class="btn-ghost">Disconnect</button>
+        <button id="demo-btn" class="btn-ghost">Demo Mode</button>
+      </div>
+
+      <div class="metrics" style="margin-top:10px;">
+        <div class="pill" id="tremor-alert">Tremor normal</div>
+        <div class="pill" id="pressure-alert">Pressure balanced</div>
+        <div class="pill" id="vibration-alert">Vibration normal</div>
+        <div class="pill" id="fall-alert">No fall detected</div>
+        <div class="pill" id="buzzer-status">Buzzer: off</div>
+        <div class="pill" id="led-status">LED: off</div>
+        <div class="pill" id="db-status">DB: idle</div>
+        <button id="db-toggle" class="btn-ghost" style="padding:6px 10px; font-size:12px;">Save to DB</button>
+        <button id="db-clear" class="btn-ghost" style="padding:6px 10px; font-size:12px;">Clear DB</button>
+      </div>
+    </section>
+
+    <section class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h2>Left vs Right Pressure</h2>
+        <canvas id="pressure-chart" height="140"></canvas>
+      </div>
+      <div class="card">
+        <h2>Tremor (Accel magnitude)</h2>
+        <canvas id="tremor-chart" height="140"></canvas>
+      </div>
+    </section>
+
+    <section class="grid grid-2" style="margin-top:16px;">
+      <div class="card">
+        <h2>Vibration / Tremor Sensor</h2>
+        <canvas id="vibration-chart" height="140"></canvas>
+      </div>
+      <div class="card">
+        <h2>Heart Rate & Temperature</h2>
+        <canvas id="hr-chart" height="120"></canvas>
+        <canvas id="temp-chart" height="120" style="margin-top:8px;"></canvas>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <h2>Body Map</h2>
+      <p class="lead" style="font-size:14px;">Quick view of left/right legs and tremor marker. Colors intensify with higher pressure or tremor.</p>
+      <div style="display:flex; justify-content:center; align-items:center;">
+        <svg id="body-map" width="200" height="260" viewBox="0 0 200 260" aria-label="body map">
+          <line x1="100" y1="60" x2="100" y2="140" stroke="#5b6b80" stroke-width="6" stroke-linecap="round"/>
+          <line x1="100" y1="90" x2="60" y2="130" stroke="#5b6b80" stroke-width="6" stroke-linecap="round"/>
+          <line x1="100" y1="90" x2="140" y2="130" stroke="#5b6b80" stroke-width="6" stroke-linecap="round"/>
+          <line x1="90" y1="140" x2="70" y2="200" stroke="#5b6b80" stroke-width="6" stroke-linecap="round"/>
+          <line x1="110" y1="140" x2="130" y2="200" stroke="#5b6b80" stroke-width="6" stroke-linecap="round"/>
+          <circle id="head-node" cx="100" cy="38" r="16" fill="#1f2a3d"/>
+          <circle id="tremor-node" cx="100" cy="38" r="8" fill="#7ef5d9"/>
+          <circle id="left-leg-node" cx="70" cy="200" r="10" fill="#7aa2ff"/>
+          <circle id="right-leg-node" cx="130" cy="200" r="10" fill="#7ef5d9"/>
+        </svg>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Made by Puneeth.
+  </footer>
+</body>
+</html>
+
+

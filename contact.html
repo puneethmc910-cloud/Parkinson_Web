@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parkinson’s Monitor | Contact</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="libs/chart.min.js" defer></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body data-page="contact">
+  <nav>
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Parkinson’s Monitor</a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <button id="theme-toggle" class="toggle" aria-label="Toggle theme" aria-pressed="false"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Contact</h1>
+      <p class="lead">Questions or feedback? Send a note.</p>
+    </section>
+
+    <section class="card">
+      <h2>Message us</h2>
+      <form id="contact-form" class="grid" style="gap:12px;">
+        <div>
+          <label for="name">Name</label>
+          <input id="name" name="name" required placeholder="Your name">
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@example.com">
+        </div>
+        <div>
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required placeholder="How can we help?"></textarea>
+        </div>
+        <button type="submit">Send</button>
+      </form>
+      <p class="lead" style="font-size:12px; margin-top:10px;">Form posts to <code>/api/contact</code>. Replace with your backend endpoint.</p>
+    </section>
+  </div>
+
+  <footer>
+    Keep Wi‑Fi secure. Replace demo data with your live ESP32 stream when ready.
+  </footer>
+</body>
+</html>
+
+
