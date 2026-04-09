@@ -58,6 +58,13 @@ if (contactForm) {
 // Dashboard logic
 const page = document.body.dataset.page;
 if (page === "dashboard") {
+  // ESP32 BLE UUIDs
+  const ESP32_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+  const SENSOR_DATA_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+  const CUE_SETTINGS_CHARACTERISTIC_UUID = "2a37e651-b03d-4f15-9b82-aa473dec29e4";
+  const FOG_STATUS_CHARACTERISTIC_UUID = "d2793bd4-9c3f-4a0b-9c4e-b0a7b6a4c5c2";
+  const BATTERY_LEVEL_CHARACTERISTIC_UUID = "2a19";
+
   const statusDot = document.getElementById("status-dot");
   const statusText = document.getElementById("status-text");
   const connectBtn = document.getElementById("connect-btn");
@@ -197,8 +204,8 @@ if (page === "dashboard") {
     legRightEl.textContent = `${d.fsrR ?? 0}`;
     const tremorMag = Math.sqrt((d.ax||0)**2 + (d.ay||0)**2 + (d.az||0)**2) - 1.0;
     tremorEl.textContent = tremorMag.toFixed(3) + " g";
-    if (hrEl) hrEl.textContent = d.hr ? `${Math.round(d.hr)} bpm` : "-- bpm";
-    if (tempEl) tempEl.textContent = d.temp ? `${d.temp.toFixed(1)} °C` : "-- °C";
+    if (hrEl) hrEl.textContent = d.fogDuration ? `${d.fogDuration.toFixed(1)} s` : "-- bpm";
+    if (tempEl) tempEl.textContent = d.battery ? `${d.battery}%` : "-- °C";
 
     const tremorHigh = Math.abs(tremorMag) > 0.12;
     tremorAlert.textContent = tremorHigh ? "Tremor elevated" : "Tremor normal";
@@ -214,10 +221,10 @@ if (page === "dashboard") {
     vibrationAlert.textContent = vibHigh ? "Vibration high" : "Vibration normal";
     vibrationAlert.style.color = vibHigh ? "var(--danger)" : "var(--ok)";
 
-    const tempHigh = d.temp && d.temp > 38.0;
-    const hrOut = d.hr && (d.hr > 120 || d.hr < 45);
+    const tempHigh = false; // no temp data
+    const hrOut = false; // no hr data
 
-    const fallDetected = d.fall === true || (Math.sqrt((d.ax||0)**2 + (d.ay||0)**2 + (d.az||0)**2) > 2.5);
+    const fallDetected = d.fogDuration > 0;
     fallAlert.textContent = fallDetected ? "Fall detected" : "No fall detected";
     fallAlert.style.color = fallDetected ? "var(--danger)" : "var(--ok)";
 
@@ -231,8 +238,8 @@ if (page === "dashboard") {
     pushData(pressureChart, [d.fsrL ?? 0, d.fsrR ?? 0]);
     pushData(tremorChart, [Math.max(0, tremorMag + 1)]);
     pushData(vibrationChart, [vib]);
-    if (d.hr) pushData(hrChart, [d.hr]);
-    if (d.temp) pushData(tempChart, [d.temp]);
+    if (d.fogDuration) pushData(hrChart, [d.fogDuration]);
+    if (d.battery) pushData(tempChart, [d.battery]);
     updateBodyMap(d, tremorMag, vib);
 
     const alerting = tremorHigh || imbalance || vibHigh || fallDetected || tempHigh || hrOut || buzzerOn;
@@ -320,8 +327,7 @@ if (page === "dashboard") {
     cleanupWS();
     cleanupBLE();
     if (!navigator.bluetooth) return alert("Web Bluetooth not supported in this browser. Use Chromium-based with HTTPS/localhost.");
-    const serviceId = bleServiceInput.value.trim() || "0000ffe0-0000-1000-8000-00805f9b34fb";
-    const charId = bleCharInput.value.trim() || "0000ffe1-0000-1000-8000-00805f9b34fb";
+    const serviceId = bleServiceInput.value.trim() || ESP32_SERVICE_UUID;
     try {
       setStatus(false, "Scanning BLE…");
       const device = await navigator.bluetooth.requestDevice({
@@ -331,16 +337,63 @@ if (page === "dashboard") {
       bleDevice = device;
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(serviceId);
-      bleChar = await service.getCharacteristic(charId);
-      await bleChar.startNotifications();
-      bleChar.addEventListener("characteristicvaluechanged", (evt) => {
+
+      // Get sensor data characteristic
+      const sensorChar = await service.getCharacteristic(SENSOR_DATA_CHARACTERISTIC_UUID);
+      await sensorChar.startNotifications();
+      sensorChar.addEventListener("characteristicvaluechanged", (evt) => {
         try {
-          const text = new TextDecoder().decode(evt.target.value);
-          renderSample(JSON.parse(text));
+          const data = evt.target.value;
+          const view = new DataView(data.buffer);
+          const frontAvg = view.getUint16(0, true);
+          const backAvg = view.getUint16(2, true);
+          const batteryPercent = view.getUint8(4);
+          const fogDuration = view.getFloat32(5, true);
+          const sample = {
+            fsrL: frontAvg,
+            fsrR: backAvg,
+            battery: batteryPercent,
+            fogDuration: fogDuration,
+            ax: 0, ay: 0, az: 1, // dummy accel
+            gx: 0, gy: 0, gz: 0,
+            vib: 0,
+            hr: 0,
+            temp: 0,
+            buzzer: false,
+            led: false,
+            fall: false
+          };
+          renderSample(sample);
         } catch (e) {
-          console.warn("BLE parse error", e);
+          console.warn("Sensor data parse error", e);
         }
       });
+
+      // Get FOG status characteristic
+      const fogChar = await service.getCharacteristic(FOG_STATUS_CHARACTERISTIC_UUID);
+      await fogChar.startNotifications();
+      fogChar.addEventListener("characteristicvaluechanged", (evt) => {
+        try {
+          const fogDetected = evt.target.value.getUint8(0) === 1;
+          fallAlert.textContent = fogDetected ? "FOG detected" : "No FOG";
+          fallAlert.style.color = fogDetected ? "var(--danger)" : "var(--ok)";
+        } catch (e) {
+          console.warn("FOG status parse error", e);
+        }
+      });
+
+      // Get battery level characteristic
+      const batteryChar = await service.getCharacteristic(BATTERY_LEVEL_CHARACTERISTIC_UUID);
+      await batteryChar.startNotifications();
+      batteryChar.addEventListener("characteristicvaluechanged", (evt) => {
+        try {
+          const batteryPercent = evt.target.value.getUint8(0);
+          if (tempEl) tempEl.textContent = `${batteryPercent}% battery`;
+        } catch (e) {
+          console.warn("Battery parse error", e);
+        }
+      });
+
       device.addEventListener("gattserverdisconnected", () => {
         setStatus(false, "BLE disconnected");
       });
